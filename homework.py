@@ -101,7 +101,6 @@ def parse_status(homework: dict):
 
 def check_tokens():
     """Checking if all the tokens required for bot are available in .env."""
-
     if PRACTICUM_TOKEN and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
         return True
     return False
