@@ -25,7 +25,8 @@ BOT = telegram.Bot(token=TELEGRAM_TOKEN)
 
 LAST_TIMESTAMP = int(time.time())
 RETRY_TIME = 600  # in seconds
-PRACTICUM_ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+PRACTICUM_ENDPOINT = ('https://practicum.yandex.ru/api/'
+                      'user_api/homework_statuses/')
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
 
@@ -38,7 +39,6 @@ HOMEWORK_STATUSES = {
 
 def send_message(bot, message):
     """Send a telegram message to the chat with the given ID."""
-
     bot.send_message(
         chat_id=TELEGRAM_CHAT_ID,
         text=message
@@ -47,30 +47,35 @@ def send_message(bot, message):
 
 def get_api_answer(current_timestamp: int):
     """Connect to Yandex.Practicum API and refresh homework statuses."""
-
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
-    homework_statuses = requests.get(PRACTICUM_ENDPOINT, headers=headers, params=params)
+    homework_statuses = requests.get(
+        PRACTICUM_ENDPOINT,
+        headers=headers,
+        params=params,
+    )
     if homework_statuses.status_code == HTTPStatus.OK:
         homework_statuses = homework_statuses.json()
         return homework_statuses
     else:
-        logging.error(f'Сбой в работе программы при попытке доступа к эндпоинту {PRACTICUM_ENDPOINT}.'
+        logging.error(f'Сбой в работе программы при попытке '
+                      f'доступа к эндпоинту {PRACTICUM_ENDPOINT}.'
                       f'Код ответа API: {homework_statuses.status_code}')
         raise ValueError
 
 
 def check_response(response: dict):
     """Checking if data from Yandex is correct."""
-
     if isinstance(response, dict):
-        if isinstance(response.get('homeworks'), list):  # checking if there is a list with 'homeworks' key
+        # checking if there is a list with 'homeworks' key
+        if isinstance(response.get('homeworks'), list):
             homeworks = response.get('homeworks')
             return homeworks
         else:
             homework_type = type(response.get('homeworks'))
-            logging.error(f'Ошибка формата данных Yandex. По ключу \'homeworks\' вместо типа list'
+            logging.error(f'Ошибка формата данных Yandex. '
+                          f'По ключу \'homeworks\' вместо типа list'
                           f'находится тип {homework_type}')
             raise TypeError
     else:
@@ -82,21 +87,20 @@ def check_response(response: dict):
 
 def parse_status(homework: dict):
     """Parse latest change in homework status."""
-
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     try:
         verdict = HOMEWORK_STATUSES[homework_status]
     except KeyError as error:
-        logging.error(f'В ответе API недокументированный статус домашней работы: {error}')
+        logging.error(f'В ответе API недокументированный статус '
+                      f'домашней работы: {error}')
         raise KeyError
     else:
         return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def check_tokens():
-    """Checking if all the tokens required for bot
-    are available in .env."""
+    """Checking if all the tokens required for bot are available in .env."""
 
     if PRACTICUM_TOKEN and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
         return True
@@ -105,11 +109,12 @@ def check_tokens():
 
 def say_hi(update, context):
     """Initial greeting and render 'refresh' button."""
-
     chat = update.effective_chat
     context.bot.send_message(chat_id=chat.id, text='Yo my dude!')
 
-    button = telegram.ReplyKeyboardMarkup([['/request_now']], resize_keyboard=True)
+    button = telegram.ReplyKeyboardMarkup(
+        [['/request_now']], resize_keyboard=True
+    )
 
     context.bot.send_message(
         chat_id=TELEGRAM_CHAT_ID,
@@ -120,7 +125,6 @@ def say_hi(update, context):
 
 def request_now(update, context):
     """Check status of the last homework now."""
-
     global LAST_TIMESTAMP
     yandex_response = get_api_answer(LAST_TIMESTAMP)
     homework_list = check_response(yandex_response)
@@ -130,27 +134,30 @@ def request_now(update, context):
             send_message(BOT, text)
             logging.info(f'Бот отправил сообщение с текстом: {text}')
         except Exception as error:
-            logging.error(f'Боту не удалось отправить сообщение. Ошибка: {error}')
+            logging.error(f'Боту не удалось отправить сообщение. '
+                          f'Ошибка: {error}')
     except IndexError:
         text = 'Нет обновлений статуса для последней домашней работы.'
         try:
             send_message(BOT, text)
             logging.info(f'Бот отправил сообщение с текстом: {text}')
         except Exception as error:
-            logging.error(f'Боту не удалось отправить сообщение. Ошибка: {error}')
+            logging.error(f'Боту не удалось отправить сообщение. '
+                          f'Ошибка: {error}')
     finally:
         LAST_TIMESTAMP = int(time.time())
 
 
 def main():
     """Bot main logic."""
-
     global LAST_TIMESTAMP
     if check_tokens():
         updater = Updater(token=TELEGRAM_TOKEN)
 
         updater.dispatcher.add_handler(CommandHandler('start', say_hi))
-        updater.dispatcher.add_handler(CommandHandler('request_now', request_now))
+        updater.dispatcher.add_handler(CommandHandler(
+            'request_now', request_now
+        ))
 
         while True:
             try:
@@ -159,7 +166,8 @@ def main():
                 try:
                     text = parse_status(homework_list[0])
                 except IndexError:
-                    logging.debug('Нет обновлений статуса для последней домашней работы.')
+                    logging.debug('Нет обновлений статуса '
+                                  'для последней домашней работы.')
                 LAST_TIMESTAMP = int(time.time())
                 time.sleep(RETRY_TIME)
             except Exception as error:
@@ -173,11 +181,13 @@ def main():
                 except UnboundLocalError:
                     pass
                 except Exception as error:
-                    logging.error(f'Боту не удалось отправить сообщение. Ошибка: {error}')
+                    logging.error(f'Боту не удалось отправить сообщение. '
+                                  f'Ошибка: {error}')
             finally:
                 updater.start_polling(poll_interval=1.0)
     else:
-        logging.critical('Отсутствует одна из обязательных переменных окружения.')
+        logging.critical('Отсутствует одна из '
+                         'обязательных переменных окружения.')
 
 
 if __name__ == '__main__':
