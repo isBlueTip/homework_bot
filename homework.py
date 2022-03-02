@@ -18,9 +18,18 @@ logging.basicConfig(
     filemode='a',
 )
 
-PRACTICUM_TOKEN = os.getenv('YANDEX_TOKEN')
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-TELEGRAM_CHAT_ID = os.getenv('USER_ID')
+PRACTICUM_TOKEN = os.getenv(
+    'YANDEX_TOKEN',
+    default='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+)
+TELEGRAM_TOKEN = os.getenv(
+    'TELEGRAM_TOKEN',
+    default='1111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAA-AAAAAAA'
+)
+TELEGRAM_CHAT_ID = os.getenv(
+    'USER_ID',
+    default="11111111"
+)
 BOT = telegram.Bot(token=TELEGRAM_TOKEN)
 
 LAST_TIMESTAMP = int(time.time())
