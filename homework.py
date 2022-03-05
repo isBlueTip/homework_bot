@@ -76,21 +76,20 @@ def get_api_answer(current_timestamp: int):
 
 def check_response(response: dict):
     """Checking if data from Yandex is correct."""
-    if isinstance(response, dict):
-        # checking if there is a list with 'homeworks' key
-        if isinstance(response.get('homeworks'), list):
-            homeworks = response.get('homeworks')
-            return homeworks
-        else:
-            homework_type = type(response.get('homeworks'))
-            logging.error(f'Ошибка формата данных Yandex. '
-                          f'По ключу \'homeworks\' вместо типа list'
-                          f'находится тип {homework_type}')
-            raise TypeError
-    else:
+    if not isinstance(response, dict):
         response_type = type(response)
         logging.error(f'Ошибка формата данных Yandex. Вместо типа dict'
                       f'находится тип {response_type}')
+        raise TypeError
+        # checking if there is a list with 'homeworks' key
+    if isinstance(response.get('homeworks'), list):
+        homeworks = response.get('homeworks')
+        return homeworks
+    else:
+        homework_type = type(response.get('homeworks'))
+        logging.error(f'Ошибка формата данных Yandex. '
+                      f'По ключу \'homeworks\' вместо типа list'
+                      f'находится тип {homework_type}')
         raise TypeError
 
 
