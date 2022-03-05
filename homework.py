@@ -150,47 +150,46 @@ def request_now(update, context):
         LAST_TIMESTAMP = int(time.time())
 
 
-
 def main():
     """Bot main logic."""
     global LAST_TIMESTAMP
-    if check_tokens():
-        updater = Updater(token=TELEGRAM_TOKEN)
-
-        updater.dispatcher.add_handler(CommandHandler('start', say_hi))
-        updater.dispatcher.add_handler(CommandHandler(
-            'request_now', request_now
-        ))
-
-        while True:
-            try:
-                yandex_response = get_api_answer(LAST_TIMESTAMP)
-                homework_list = check_response(yandex_response)
-                try:
-                    text = parse_status(homework_list[0])
-                except IndexError:
-                    logging.debug('Нет обновлений статуса '
-                                  'для последней домашней работы.')
-                LAST_TIMESTAMP = int(time.time())
-                time.sleep(RETRY_TIME)
-            except Exception as error:
-                message = f'Сбой в работе программы: {error}'
-                logging.error(message)
-                time.sleep(RETRY_TIME)
-            else:
-                try:
-                    send_message(BOT, text)
-                    logging.info(f'Бот отправил сообщение с текстом: {text}')
-                except UnboundLocalError:
-                    pass
-                except Exception as error:
-                    logging.error(f'Боту не удалось отправить сообщение. '
-                                  f'Ошибка: {error}')
-            finally:
-                updater.start_polling(poll_interval=1.0)
-    else:
+    if not check_tokens():
         logging.critical('Отсутствует одна из '
                          'обязательных переменных окружения.')
+
+    updater = Updater(token=TELEGRAM_TOKEN)
+
+    updater.dispatcher.add_handler(CommandHandler('start', say_hi))
+    updater.dispatcher.add_handler(CommandHandler(
+        'request_now', request_now
+    ))
+
+    while True:
+        try:
+            yandex_response = get_api_answer(LAST_TIMESTAMP)
+            homework_list = check_response(yandex_response)
+            try:
+                text = parse_status(homework_list[0])
+            except IndexError:
+                logging.debug('Нет обновлений статуса '
+                              'для последней домашней работы.')
+            LAST_TIMESTAMP = int(time.time())
+            time.sleep(RETRY_TIME)
+        except Exception as error:
+            message = f'Сбой в работе программы: {error}'
+            logging.error(message)
+            time.sleep(RETRY_TIME)
+        else:
+            try:
+                send_message(BOT, text)
+                logging.info(f'Бот отправил сообщение с текстом: {text}')
+            except UnboundLocalError:
+                pass
+            except Exception as error:
+                logging.error(f'Боту не удалось отправить сообщение. '
+                              f'Ошибка: {error}')
+        finally:
+            updater.start_polling(poll_interval=1.0)
 
 
 if __name__ == '__main__':
