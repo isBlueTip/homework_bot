@@ -137,22 +137,18 @@ def request_now(update, context):
     homework_list = check_response(yandex_response)
     try:
         text = parse_status(homework_list[0])
-        try:
-            send_message(BOT, text)
-            logging.info(f'Бот отправил сообщение с текстом: {text}')
-        except Exception as error:
-            logging.error(f'Боту не удалось отправить сообщение. '
-                          f'Ошибка: {error}')
     except IndexError:
         text = 'Нет обновлений статуса для последней домашней работы.'
-        try:
-            send_message(BOT, text)
-            logging.info(f'Бот отправил сообщение с текстом: {text}')
-        except Exception as error:
-            logging.error(f'Боту не удалось отправить сообщение. '
-                          f'Ошибка: {error}')
+
+    try:
+        send_message(BOT, text)
+        logging.info(f'Бот отправил сообщение с текстом: {text}')
+    except Exception as error:
+        logging.error(f'Боту не удалось отправить сообщение. '
+                      f'Ошибка: {error}')
     finally:
         LAST_TIMESTAMP = int(time.time())
+
 
 
 def main():
