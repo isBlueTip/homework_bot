@@ -32,6 +32,7 @@ TELEGRAM_CHAT_ID = os.getenv(
 )
 BOT = telegram.Bot(token=TELEGRAM_TOKEN)
 
+EPOCH_TIME_FOR_REQUEST_LATEST = 1638230400
 RETRY_TIME = 600  # in seconds
 PRACTICUM_ENDPOINT = ('https://practicum.yandex.ru/api/'
                       'user_api/homework_statuses/')
@@ -132,7 +133,7 @@ def say_hi(update, context):
 def request_latest(update, context):
     """Check status of the last homework now."""
     # request homeworks since the beginning of 2022
-    yandex_response = get_api_answer(1638230400)
+    yandex_response = get_api_answer(EPOCH_TIME_FOR_REQUEST_LATEST)
     homework_list = check_response(yandex_response)
     try:
         text = parse_status(homework_list[0])
