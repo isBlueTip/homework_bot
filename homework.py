@@ -32,7 +32,6 @@ TELEGRAM_CHAT_ID = os.getenv(
 )
 BOT = telegram.Bot(token=TELEGRAM_TOKEN)
 
-LAST_TIMESTAMP = int(time.time())
 RETRY_TIME = 600  # in seconds
 PRACTICUM_ENDPOINT = ('https://practicum.yandex.ru/api/'
                       'user_api/homework_statuses/')
@@ -130,10 +129,10 @@ def say_hi(update, context):
     )
 
 
-def request_now(update, context):
+def request_latest(update, context):
     """Check status of the last homework now."""
-    global LAST_TIMESTAMP
-    yandex_response = get_api_answer(LAST_TIMESTAMP)
+    # request homeworks since the beginning of 2022
+    yandex_response = get_api_answer(1638230400)
     homework_list = check_response(yandex_response)
     try:
         text = parse_status(homework_list[0])
@@ -147,12 +146,12 @@ def request_now(update, context):
         logging.error(f'Боту не удалось отправить сообщение. '
                       f'Ошибка: {error}')
     finally:
-        LAST_TIMESTAMP = int(time.time())
+        return int(time.time())
 
 
 def main():
     """Bot main logic."""
-    global LAST_TIMESTAMP
+    last_timestamp = int(time.time())
     if not check_tokens():
         logging.critical('Отсутствует одна из '
                          'обязательных переменных окружения.')
@@ -160,20 +159,21 @@ def main():
     updater = Updater(token=TELEGRAM_TOKEN)
 
     updater.dispatcher.add_handler(CommandHandler('start', say_hi))
-    updater.dispatcher.add_handler(CommandHandler(
-        'request_now', request_now
+    last_timestamp = updater.dispatcher.add_handler(CommandHandler(
+        'request_latest',
+        request_latest,
     ))
 
     while True:
         try:
-            yandex_response = get_api_answer(LAST_TIMESTAMP)
+            yandex_response = get_api_answer(last_timestamp)
             homework_list = check_response(yandex_response)
             try:
                 text = parse_status(homework_list[0])
             except IndexError:
                 logging.debug('Нет обновлений статуса '
                               'для последней домашней работы.')
-            LAST_TIMESTAMP = int(time.time())
+            last_timestamp = int(time.time())
             time.sleep(RETRY_TIME)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
