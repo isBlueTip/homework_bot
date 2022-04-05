@@ -9,14 +9,15 @@ from dotenv import load_dotenv
 import telegram
 from telegram.ext import CommandHandler, Updater
 
-load_dotenv()
+from loggers import logger, formatter
 
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO,
-    filename='PracticumStatusBot.log',
-    filemode='a',
-)
+LOG_NAME = 'PracticumStatusBot.log'
+
+file_handler = logging.FileHandler(LOG_NAME)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+load_dotenv()
 
 PRACTICUM_TOKEN = os.getenv(
     'YANDEX_TOKEN',
@@ -68,7 +69,7 @@ def get_api_answer(current_timestamp: int):
         homework_statuses = homework_statuses.json()
         return homework_statuses
     else:
-        logging.error(f'Сбой в работе программы при попытке '
+        logger.error(f'Сбой в работе программы при попытке '
                       f'доступа к эндпоинту {PRACTICUM_ENDPOINT}.'
                       f'Код ответа API: {homework_statuses.status_code}')
         raise ValueError
@@ -78,7 +79,7 @@ def check_response(response: dict):
     """Checking if data from Yandex is correct."""
     if not isinstance(response, dict):
         response_type = type(response)
-        logging.error(f'Ошибка формата данных Yandex. Вместо типа dict'
+        logger.error(f'Ошибка формата данных Yandex. Вместо типа dict'
                       f'находится тип {response_type}')
         raise TypeError
         # checking if there is a list with 'homeworks' key
@@ -87,7 +88,7 @@ def check_response(response: dict):
         return homeworks
     else:
         homework_type = type(response.get('homeworks'))
-        logging.error(f'Ошибка формата данных Yandex. '
+        logger.error(f'Ошибка формата данных Yandex. '
                       f'По ключу \'homeworks\' вместо типа list'
                       f'находится тип {homework_type}')
         raise TypeError
@@ -100,7 +101,7 @@ def parse_status(homework: dict):
     try:
         verdict = HOMEWORK_STATUSES[homework_status]
     except KeyError as error:
-        logging.error(f'В ответе API недокументированный статус '
+        logger.error(f'В ответе API недокументированный статус '
                       f'домашней работы: {error}')
         raise KeyError
     else:
@@ -141,9 +142,9 @@ def request_latest(update, context):
 
     try:
         send_message(BOT, text)
-        logging.info(f'Бот отправил сообщение с текстом: {text}')
+        logger.info(f'Бот отправил сообщение с текстом: {text}')
     except Exception as error:
-        logging.error(f'Боту не удалось отправить сообщение. '
+        logger.error(f'Боту не удалось отправить сообщение. '
                       f'Ошибка: {error}')
     finally:
         return int(time.time())
@@ -151,9 +152,9 @@ def request_latest(update, context):
 
 def main():
     """Bot main logic."""
-    last_timestamp = int(time.time())
+    last_timestamp = int(time.time())  # time of the latest request
     if not check_tokens():
-        logging.critical('Отсутствует одна из '
+        logger.critical('Отсутствует одна из '
                          'обязательных переменных окружения.')
 
     updater = Updater(token=TELEGRAM_TOKEN)
@@ -171,22 +172,22 @@ def main():
             try:
                 text = parse_status(homework_list[0])
             except IndexError:
-                logging.debug('Нет обновлений статуса '
+                logger.debug('Нет обновлений статуса '
                               'для последней домашней работы.')
             last_timestamp = int(time.time())
             time.sleep(RETRY_TIME)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            logging.error(message)
+            logger.error(message)
             time.sleep(RETRY_TIME)
         else:
             try:
                 send_message(BOT, text)
-                logging.info(f'Бот отправил сообщение с текстом: {text}')
+                logger.info(f'Бот отправил сообщение с текстом: {text}')
             except UnboundLocalError:
                 pass
             except Exception as error:
-                logging.error(f'Боту не удалось отправить сообщение. '
+                logger.error(f'Боту не удалось отправить сообщение. '
                               f'Ошибка: {error}')
         finally:
             updater.start_polling(poll_interval=1.0)
