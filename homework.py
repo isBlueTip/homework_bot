@@ -22,17 +22,14 @@ load_dotenv()
 
 PRACTICUM_TOKEN = os.getenv(
     'YANDEX_TOKEN',
-    # default='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
 )
 
 TELEGRAM_TOKEN = os.getenv(
     'TELEGRAM_TOKEN',
-    # default='1111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAA-AAAAAAA'
 )
 
 TELEGRAM_CHAT_ID = os.getenv(
     'USER_ID',
-    # default="11111111"
 )
 
 try:
@@ -44,8 +41,8 @@ except TypeError:
 
 EPOCH_TIME_FOR_REQUEST_LATEST = 1638230400  # The beginning of 2022
 LAST_TIMESTAMP = 0  # Time of last hw checking
-# RETRY_TIME = 600  # in seconds
-RETRY_TIME = 5  # in seconds
+RETRY_TIME = 600  # in seconds
+# RETRY_TIME = 5  # in seconds
 PRACTICUM_ENDPOINT = ('https://practicum.yandex.ru/api/'
                       'user_api/homework_statuses/')
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
@@ -87,7 +84,7 @@ def get_api_answer(last_timestamp: int):
         homework_statuses = homework_statuses.json()
         logger.debug('homework_statuses = ')  # TODO
         logger.debug(homework_statuses)
-        return homework_statuses  # TODO добавить логику сравнения текущего и предыдущего timestamp, если в прошлый раз была ошибка API
+        return homework_statuses
     else:
         logger.error(f'Сбой в работе программы при попытке '
                       f'доступа к эндпоинту {PRACTICUM_ENDPOINT}.'
@@ -206,7 +203,7 @@ def main():
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
         else:
-            last_timestamp = int(time.time())  # refresh timestamp in case of correct 'try' execution
+            last_timestamp = int(time.time())  # refresh timestamp
         finally:
             updater.start_polling(poll_interval=0.0)
             time.sleep(RETRY_TIME)
