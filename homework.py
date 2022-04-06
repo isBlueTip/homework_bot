@@ -53,6 +53,7 @@ def send_message(bot, message):
         chat_id=TELEGRAM_CHAT_ID,
         text=message
     )
+    logger.info(f'Бот отправил сообщение с текстом: {message}')
 
 
 def get_api_answer(current_timestamp: int):
@@ -142,7 +143,6 @@ def request_latest(update, context):
 
     try:
         send_message(BOT, text)
-        logger.info(f'Бот отправил сообщение с текстом: {text}')
     except Exception as error:
         logger.error(f'Боту не удалось отправить сообщение. '
                       f'Ошибка: {error}')
@@ -183,7 +183,6 @@ def main():
         else:
             try:
                 send_message(BOT, text)
-                logger.info(f'Бот отправил сообщение с текстом: {text}')
             except UnboundLocalError:
                 pass
             except Exception as error:
