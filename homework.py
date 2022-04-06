@@ -58,11 +58,16 @@ HOMEWORK_STATUSES = {
 
 def send_message(bot, message):
     """Send a telegram message to the chat with the given ID."""
-    bot.send_message(
-        chat_id=TELEGRAM_CHAT_ID,
-        text=message
-    )
-    logger.info(f'Бот отправил сообщение с текстом: {message}')
+    try:
+        bot.send_message(
+            chat_id=TELEGRAM_CHAT_ID,
+            text=message
+        )
+    except Exception as error:
+        logger.error(f'Боту не удалось отправить сообщение. '
+                     f'Ошибка: {error}')
+    else:
+        logger.info(f'Бот отправил сообщение с текстом: {message}')
 
 
 def get_api_answer(current_timestamp: int):
@@ -131,18 +136,23 @@ def check_tokens():
 
 def say_hi(update, context):
     """Initial greeting and render 'refresh' button."""
-    chat = update.effective_chat
-    context.bot.send_message(chat_id=chat.id, text='Yo my dude!')
+    logger.debug('say_hi')
+    # chat = update.effective_chat
+    text = 'Yo my dude!'
+    send_message(BOT, text)
+    # context.bot.send_message(chat_id=chat.id, text='Yo my dude!')
 
     button = telegram.ReplyKeyboardMarkup(
-        [['/request_now']], resize_keyboard=True
+        [['/request_latest']], resize_keyboard=True
     )
+    text = 'Hope you\'re having a nice day!'
+    send_message(BOT, text)
 
-    context.bot.send_message(
-        chat_id=TELEGRAM_CHAT_ID,
-        text='Hope you\'re having a nice day!',
-        reply_markup=button
-    )
+    # context.bot.send_message(
+    #     chat_id=TELEGRAM_CHAT_ID,
+    #     text='Hope you\'re having a nice day!',
+    #     reply_markup=button
+    # )
 
 
 def request_latest(update, context):
@@ -154,19 +164,18 @@ def request_latest(update, context):
     except IndexError:
         text = 'Нет обновлений статуса для последней домашней работы.'
 
-    try:
-        send_message(BOT, text)
-    except Exception as error:
-        logger.error(f'Боту не удалось отправить сообщение. '
-                      f'Ошибка: {error}')
-    finally:
-        return int(time.time())
+    send_message(BOT, text)
+    return int(time.time())
 
 
 def main():
     """Bot main logic."""
     last_timestamp = int(time.time())  # time of the latest request
-    tokens_status = check_tokens()
+
+    logger.debug('last_timestamp = ')
+    logger.debug(last_timestamp)
+
+    tokens_status = check_tokens()  # check tokens status
     if isinstance(tokens_status, str):
         logger.critical(f'Отсутствует обязательная '
                         f'переменная окружения {tokens_status}.')
@@ -179,8 +188,11 @@ def main():
         'request_latest',
         request_latest,
     ))
+    logger.debug('last_timestamp = ')
+    logger.debug(last_timestamp)
 
     while True:
+        logger.debug('while')
         try:
             yandex_response = get_api_answer(last_timestamp)
             homework_list = check_response(yandex_response)
@@ -200,9 +212,6 @@ def main():
                 send_message(BOT, text)
             except UnboundLocalError:
                 pass
-            except Exception as error:
-                logger.error(f'Боту не удалось отправить сообщение. '
-                              f'Ошибка: {error}')
         finally:
             updater.start_polling(poll_interval=0.0)
 
