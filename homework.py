@@ -41,8 +41,8 @@ except TypeError:
 
 EPOCH_TIME_FOR_REQUEST_LATEST = 1638230400  # The beginning of 2022
 LAST_TIMESTAMP = 0  # Time of last hw checking
-RETRY_TIME = 600  # in seconds
-# RETRY_TIME = 5  # in seconds
+# RETRY_TIME = 600  # in seconds
+RETRY_TIME = 5  # in seconds
 PRACTICUM_ENDPOINT = ('https://practicum.yandex.ru/api/'
                       'user_api/homework_statuses/')
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
@@ -57,10 +57,14 @@ HOMEWORK_STATUSES = {
 
 def send_message(bot, message):
     """Send a telegram message to the chat with the given ID."""
+    button = telegram.ReplyKeyboardMarkup(
+        [['/request_latest']], resize_keyboard=True
+    )
     try:
         bot.send_message(
             chat_id=TELEGRAM_CHAT_ID,
-            text=message
+            text=message,
+            reply_markup=button
         )
     except Exception as error:
         logger.error(f'Боту не удалось отправить сообщение. '
@@ -71,8 +75,6 @@ def send_message(bot, message):
 
 def get_api_answer(last_timestamp: int):
     """Connect to Yandex.Practicum API and refresh homework statuses."""
-    logger.debug('last_timestamp in get_api_answer = ')  # TODO
-    logger.debug(last_timestamp)
     params = {'from_date': last_timestamp}
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
     homework_statuses = requests.get(
@@ -82,8 +84,6 @@ def get_api_answer(last_timestamp: int):
     )
     if homework_statuses.status_code == HTTPStatus.OK:
         homework_statuses = homework_statuses.json()
-        logger.debug('homework_statuses = ')  # TODO
-        logger.debug(homework_statuses)
         return homework_statuses
     else:
         logger.error(f'Сбой в работе программы при попытке '
@@ -102,8 +102,6 @@ def check_response(response: dict):
         # checking if there is a list with 'homeworks' key
     if isinstance(response.get('homeworks'), list):
         homeworks = response.get('homeworks')
-        logger.debug('homeworks from check_response = ')  # TODO
-        logger.debug(homeworks)
         return homeworks
     else:
         homework_type = type(response.get('homeworks'))
@@ -140,33 +138,24 @@ def check_tokens():
 
 def say_hi(update, context):
     """Initial greeting and render 'refresh' button."""
-    logger.debug('say_hi')
-    # chat = update.effective_chat
     text = 'Yo my dude!'
     send_message(BOT, text)
-    # context.bot.send_message(chat_id=chat.id, text='Yo my dude!')
-
-    button = telegram.ReplyKeyboardMarkup(
-        [['/request_latest']], resize_keyboard=True
-    )
     text = 'Hope you\'re having a nice day!'
     send_message(BOT, text)
 
-    # context.bot.send_message(
-    #     chat_id=TELEGRAM_CHAT_ID,
-    #     text='Hope you\'re having a nice day!',
-    #     reply_markup=button
-    # )
-
 
 def request_latest(update, context):
-    """Check status of the latest homework now."""
-    yandex_response = get_api_answer(EPOCH_TIME_FOR_REQUEST_LATEST)
-    homework_list = check_response(yandex_response)
-    text = parse_status(homework_list[0])
-
-    send_message(BOT, text)
-    return int(time.time())
+    """Check status of the latest homework."""
+    try:
+        yandex_response = get_api_answer(EPOCH_TIME_FOR_REQUEST_LATEST)
+        homework_list = check_response(yandex_response)
+    except Exception as error:
+        message = f'Сбой в работе программы: {error}'
+        logger.error(message)
+        send_message(BOT, message)
+    else:
+        text = parse_status(homework_list[0])
+        send_message(BOT, text)
 
 
 def main():
@@ -188,6 +177,8 @@ def main():
     ))
 
     while True:
+        logger.debug('last_timestamp = ')
+        logger.debug(last_timestamp)
         logger.debug('***WHILE LOOP***')
         try:
             yandex_response = get_api_answer(last_timestamp)
