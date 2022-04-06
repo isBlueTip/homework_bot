@@ -43,6 +43,7 @@ except TypeError:
     exit()
 
 EPOCH_TIME_FOR_REQUEST_LATEST = 1638230400  # The beginning of 2022
+LAST_TIMESTAMP = 0  # Time of last hw checking
 RETRY_TIME = 600  # in seconds
 PRACTICUM_ENDPOINT = ('https://practicum.yandex.ru/api/'
                       'user_api/homework_statuses/')
@@ -173,7 +174,7 @@ def request_latest(update, context):
 
 def main():
     """Bot main logic."""
-    last_timestamp = int(time.time())  # time of the latest request
+    last_timestamp = 0  # initial time of the latest request
 
     logger.debug('last_timestamp = ')
     logger.debug(last_timestamp)
@@ -187,7 +188,8 @@ def main():
     updater = Updater(token=TELEGRAM_TOKEN)
 
     updater.dispatcher.add_handler(CommandHandler('start', say_hi))
-    last_timestamp = updater.dispatcher.add_handler(CommandHandler(
+    # last_timestamp = updater.dispatcher.add_handler(CommandHandler(
+    updater.dispatcher.add_handler(CommandHandler(
         'request_latest',
         request_latest,
     ))
@@ -204,8 +206,6 @@ def main():
             except IndexError:
                 logger.info('Нет обновлений статуса '
                               'для последней домашней работы.')
-            last_timestamp = int(time.time())
-            time.sleep(RETRY_TIME)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
@@ -216,6 +216,8 @@ def main():
             except UnboundLocalError:
                 pass
         finally:
+            last_timestamp = int(time.time())  # refresh timestamp
+            time.sleep(RETRY_TIME)
             updater.start_polling(poll_interval=0.0)
 
 
