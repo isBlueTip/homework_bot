@@ -44,7 +44,8 @@ except TypeError:
 
 EPOCH_TIME_FOR_REQUEST_LATEST = 1638230400  # The beginning of 2022
 LAST_TIMESTAMP = 0  # Time of last hw checking
-RETRY_TIME = 600  # in seconds
+# RETRY_TIME = 600  # in seconds
+RETRY_TIME = 5  # in seconds
 PRACTICUM_ENDPOINT = ('https://practicum.yandex.ru/api/'
                       'user_api/homework_statuses/')
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
@@ -71,12 +72,11 @@ def send_message(bot, message):
         logger.info(f'Бот отправил сообщение с текстом: {message}')
 
 
-def get_api_answer(current_timestamp: int):
+def get_api_answer(last_timestamp: int):
     """Connect to Yandex.Practicum API and refresh homework statuses."""
-    timestamp = current_timestamp or int(time.time())
-    logger.debug('timestamp in get_api_answer = ')  # TODO
-    logger.debug(timestamp)
-    params = {'from_date': timestamp}
+    logger.debug('last_timestamp in get_api_answer = ')  # TODO
+    logger.debug(last_timestamp)
+    params = {'from_date': last_timestamp}
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
     homework_statuses = requests.get(
         PRACTICUM_ENDPOINT,
@@ -87,7 +87,7 @@ def get_api_answer(current_timestamp: int):
         homework_statuses = homework_statuses.json()
         logger.debug('homework_statuses = ')  # TODO
         logger.debug(homework_statuses)
-        return homework_statuses
+        return homework_statuses  # TODO добавить логику сравнения текущего и предыдущего timestamp, если в прошлый раз была ошибка API
     else:
         logger.error(f'Сбой в работе программы при попытке '
                       f'доступа к эндпоинту {PRACTICUM_ENDPOINT}.'
@@ -176,9 +176,6 @@ def main():
     """Bot main logic."""
     last_timestamp = 0  # initial time of the latest request
 
-    logger.debug('last_timestamp = ')
-    logger.debug(last_timestamp)
-
     tokens_status = check_tokens()  # check tokens status
     if isinstance(tokens_status, str):
         logger.critical(f'Отсутствует обязательная '
@@ -188,16 +185,13 @@ def main():
     updater = Updater(token=TELEGRAM_TOKEN)
 
     updater.dispatcher.add_handler(CommandHandler('start', say_hi))
-    # last_timestamp = updater.dispatcher.add_handler(CommandHandler(
     updater.dispatcher.add_handler(CommandHandler(
         'request_latest',
         request_latest,
     ))
-    logger.debug('last_timestamp = ')
-    logger.debug(last_timestamp)
 
     while True:
-        logger.debug('while')
+        logger.debug('***WHILE LOOP***')
         try:
             yandex_response = get_api_answer(last_timestamp)
             homework_list = check_response(yandex_response)
@@ -206,19 +200,16 @@ def main():
             except IndexError:
                 logger.info('Нет обновлений статуса '
                               'для последней домашней работы.')
+            else:
+                send_message(BOT, text)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
-            time.sleep(RETRY_TIME)
         else:
-            try:
-                send_message(BOT, text)
-            except UnboundLocalError:
-                pass
+            last_timestamp = int(time.time())  # refresh timestamp in case of correct 'try' execution
         finally:
-            last_timestamp = int(time.time())  # refresh timestamp
-            time.sleep(RETRY_TIME)
             updater.start_polling(poll_interval=0.0)
+            time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
