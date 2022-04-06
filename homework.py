@@ -41,8 +41,8 @@ except TypeError:
 
 EPOCH_TIME_FOR_REQUEST_LATEST = 1638230400  # The beginning of 2022
 LAST_TIMESTAMP = 0  # Time of last hw checking
-# RETRY_TIME = 600  # in seconds
-RETRY_TIME = 5  # in seconds
+RETRY_TIME = 600  # in seconds
+# RETRY_TIME = 5  # in seconds
 PRACTICUM_ENDPOINT = ('https://practicum.yandex.ru/api/'
                       'user_api/homework_statuses/')
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
@@ -100,15 +100,13 @@ def check_response(response: dict):
                       f'в ответе объект типа {response_type}')
         raise TypeError
         # checking if there is a list with 'homeworks' key
-    if isinstance(response.get('homeworks'), list):
-        homeworks = response.get('homeworks')
-        return homeworks
-    else:
+    if not isinstance(response.get('homeworks'), list):
         homework_type = type(response.get('homeworks'))
         logger.error(f'Ошибка формата данных Yandex. '
                       f'По ключу \'homeworks\' вместо типа list'
                       f'расположен объект типа {homework_type}')
         raise TypeError
+    return response.get('homeworks')
 
 
 def parse_status(homework: dict):
