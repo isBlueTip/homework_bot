@@ -100,15 +100,13 @@ def check_response(response: dict):
                       f'в ответе объект типа {response_type}')
         raise TypeError
         # checking if there is a list with 'homeworks' key
-    if isinstance(response.get('homeworks'), list):
-        homeworks = response.get('homeworks')
-        return homeworks
-    else:
+    if not isinstance(response.get('homeworks'), list):
         homework_type = type(response.get('homeworks'))
         logger.error(f'Ошибка формата данных Yandex. '
                       f'По ключу \'homeworks\' вместо типа list'
                       f'расположен объект типа {homework_type}')
         raise TypeError
+    return response.get('homeworks')
 
 
 def parse_status(homework: dict):
