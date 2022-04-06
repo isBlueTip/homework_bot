@@ -1,6 +1,7 @@
 import logging
 import os
 import requests
+from sys import exit
 import time
 from http import HTTPStatus
 
@@ -21,17 +22,25 @@ load_dotenv()
 
 PRACTICUM_TOKEN = os.getenv(
     'YANDEX_TOKEN',
-    default='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+    # default='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
 )
+
 TELEGRAM_TOKEN = os.getenv(
     'TELEGRAM_TOKEN',
-    default='1111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAA-AAAAAAA'
+    # default='1111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAA-AAAAAAA'
 )
+
 TELEGRAM_CHAT_ID = os.getenv(
     'USER_ID',
-    default="11111111"
+    # default="11111111"
 )
-BOT = telegram.Bot(token=TELEGRAM_TOKEN)
+
+try:
+    BOT = telegram.Bot(token=TELEGRAM_TOKEN)
+except TypeError:
+    logger.critical('Обязательная переменная окружения '
+                    'TELEGRAM_TOKEN отсутствует либо неверная.')
+    exit()
 
 EPOCH_TIME_FOR_REQUEST_LATEST = 1638230400  # The beginning of 2022
 RETRY_TIME = 600  # in seconds
@@ -111,9 +120,13 @@ def parse_status(homework: dict):
 
 def check_tokens():
     """Checking if all the tokens required for bot are available in .env."""
-    if PRACTICUM_TOKEN and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
-        return True
-    return False
+    if not PRACTICUM_TOKEN:
+        return 'PRACTICUM_TOKEN'
+    elif not TELEGRAM_TOKEN:
+        return 'TELEGRAM_TOKEN'
+    elif not TELEGRAM_CHAT_ID:
+        return 'TELEGRAM_CHAT_ID'
+    return True
 
 
 def say_hi(update, context):
@@ -133,7 +146,7 @@ def say_hi(update, context):
 
 
 def request_latest(update, context):
-    """Check status of the last homework now."""
+    """Check status of the latest homework now."""
     yandex_response = get_api_answer(EPOCH_TIME_FOR_REQUEST_LATEST)
     homework_list = check_response(yandex_response)
     try:
@@ -153,9 +166,11 @@ def request_latest(update, context):
 def main():
     """Bot main logic."""
     last_timestamp = int(time.time())  # time of the latest request
-    if not check_tokens():
-        logger.critical('Отсутствует одна из '
-                         'обязательных переменных окружения.')
+    tokens_status = check_tokens()
+    if isinstance(tokens_status, str):
+        logger.critical(f'Отсутствует обязательная '
+                        f'переменная окружения {tokens_status}.')
+        exit()
 
     updater = Updater(token=TELEGRAM_TOKEN)
 
@@ -189,7 +204,7 @@ def main():
                 logger.error(f'Боту не удалось отправить сообщение. '
                               f'Ошибка: {error}')
         finally:
-            updater.start_polling(poll_interval=1.0)
+            updater.start_polling(poll_interval=0.0)
 
 
 if __name__ == '__main__':
