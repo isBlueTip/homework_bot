@@ -73,6 +73,8 @@ def send_message(bot, message):
 def get_api_answer(current_timestamp: int):
     """Connect to Yandex.Practicum API and refresh homework statuses."""
     timestamp = current_timestamp or int(time.time())
+    logger.debug('timestamp in get_api_answer = ')  # TODO
+    logger.debug(timestamp)
     params = {'from_date': timestamp}
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
     homework_statuses = requests.get(
@@ -82,6 +84,8 @@ def get_api_answer(current_timestamp: int):
     )
     if homework_statuses.status_code == HTTPStatus.OK:
         homework_statuses = homework_statuses.json()
+        logger.debug('homework_statuses = ')  # TODO
+        logger.debug(homework_statuses)
         return homework_statuses
     else:
         logger.error(f'Сбой в работе программы при попытке '
@@ -95,17 +99,19 @@ def check_response(response: dict):
     if not isinstance(response, dict):
         response_type = type(response)
         logger.error(f'Ошибка формата данных Yandex. Вместо типа dict'
-                      f'находится тип {response_type}')
+                      f'в ответе объект типа {response_type}')
         raise TypeError
         # checking if there is a list with 'homeworks' key
     if isinstance(response.get('homeworks'), list):
         homeworks = response.get('homeworks')
+        logger.debug('homeworks from check_response = ')  # TODO
+        logger.debug(homeworks)
         return homeworks
     else:
         homework_type = type(response.get('homeworks'))
         logger.error(f'Ошибка формата данных Yandex. '
                       f'По ключу \'homeworks\' вместо типа list'
-                      f'находится тип {homework_type}')
+                      f'расположен объект типа {homework_type}')
         raise TypeError
 
 
@@ -159,10 +165,7 @@ def request_latest(update, context):
     """Check status of the latest homework now."""
     yandex_response = get_api_answer(EPOCH_TIME_FOR_REQUEST_LATEST)
     homework_list = check_response(yandex_response)
-    try:
-        text = parse_status(homework_list[0])
-    except IndexError:
-        text = 'Нет обновлений статуса для последней домашней работы.'
+    text = parse_status(homework_list[0])
 
     send_message(BOT, text)
     return int(time.time())
@@ -199,7 +202,7 @@ def main():
             try:
                 text = parse_status(homework_list[0])
             except IndexError:
-                logger.debug('Нет обновлений статуса '
+                logger.info('Нет обновлений статуса '
                               'для последней домашней работы.')
             last_timestamp = int(time.time())
             time.sleep(RETRY_TIME)
