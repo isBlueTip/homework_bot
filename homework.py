@@ -22,14 +22,17 @@ load_dotenv()
 
 PRACTICUM_TOKEN = os.getenv(
     'YANDEX_TOKEN',
+    default='AQAABAABaT4WcAYckdSYm5vyn27g8TKtITc'
 )
 
 TELEGRAM_TOKEN = os.getenv(
     'TELEGRAM_TOKEN',
+    default='3174677406:AAHx7ijkmekXILBbfYzn7nAaNqtiQjU63q8'
 )
 
 TELEGRAM_CHAT_ID = os.getenv(
     'USER_ID',
+    default='123896774'
 )
 
 try:
@@ -42,7 +45,6 @@ except TypeError:
 EPOCH_TIME_FOR_REQUEST_LATEST = 1638230400  # The beginning of 2022
 LAST_TIMESTAMP = 0  # Time of last hw checking
 RETRY_TIME = 600  # in seconds
-# RETRY_TIME = 5  # in seconds
 PRACTICUM_ENDPOINT = ('https://practicum.yandex.ru/api/'
                       'user_api/homework_statuses/')
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
