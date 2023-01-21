@@ -1,6 +1,6 @@
 # Телеграм-бот для проверки статуса домашней работы 
 
-## Описание проекта
+## Описание
 
 Бот периодически опрашивает API Яндекс.домашка и присылает изменения статуса последней домашней работы. Также бот логгирует важные события
 
@@ -25,5 +25,5 @@ Django, Telegram Python lib
 
 
 [LinkedIn](https://www.linkedin.com/in/simonegorov/)  
-[Email](rhinorofl@gmail.com)  
+[Email](simon.egorov.job@gmail.com)  
 [Telegram](https://t.me/SamePersoon)
